@@ -22,6 +22,7 @@ using IBM.Watson.DeveloperCloud.Services.SpeechToText.v1;
 using IBM.Watson.DeveloperCloud.Utilities;
 using IBM.Watson.DeveloperCloud.DataTypes;
 using IBM.Watson.DeveloperCloud.Services.Conversation.v1;
+using System;
 
 public class ExampleConversationStreaming : MonoBehaviour
 {
@@ -34,6 +35,11 @@ public class ExampleConversationStreaming : MonoBehaviour
 	private SpeechToText m_SpeechToText = new SpeechToText();
 	private Conversation m_Conversation = new Conversation();
 	private string m_WorkspaceID;
+
+	private DateTime m_TimeOfLastSentSpeechData;
+	private TimeSpan m_SpeechToTextLatency;
+	private DateTime m_TimeOfSentConversationData;
+	private TimeSpan m_ConversationLatency;
 
 	void Awake()
 	{
@@ -140,6 +146,7 @@ public class ExampleConversationStreaming : MonoBehaviour
 				record.Clip = AudioClip.Create("Recording", midPoint, m_Recording.channels, m_RecordingHZ, false);
 				record.Clip.SetData(samples, 0);
 
+				m_TimeOfLastSentSpeechData = DateTime.Now;
 				m_SpeechToText.OnListen(record);
 
 				bFirstBlock = !bFirstBlock;
@@ -172,7 +179,10 @@ public class ExampleConversationStreaming : MonoBehaviour
 					if(res.final)
 					{
 						Log.Debug("ExampleConversationStreaming", string.Format("{0} ({1}, {2:0.00})\n", text, res.final ? "Final" : "Interim", alt.confidence));
+						m_SpeechToTextLatency = DateTime.Now - m_TimeOfLastSentSpeechData;
+						m_TimeOfSentConversationData = DateTime.Now;
 
+						Log.Debug("ExampleConversationStreaming", "STT Latency: {0}ms", m_SpeechToTextLatency.Milliseconds);
 						m_Conversation.Message(OnMessage, m_WorkspaceID, text);
 					}
 				}
@@ -182,6 +192,10 @@ public class ExampleConversationStreaming : MonoBehaviour
 
 	private void OnMessage(MessageResponse resp, string customData)
 	{
+		m_ConversationLatency = DateTime.Now - m_TimeOfSentConversationData;
+		Log.Debug("ExampleConversationStreaming", "Conversation Latency: {0}ms", m_ConversationLatency.Milliseconds);
+		Log.Debug("ExampleConversationStreaming", "Total Latency: {0}ms", m_SpeechToTextLatency.Milliseconds + m_ConversationLatency.Milliseconds);
+
 		if(resp != null)
 		{
 			Log.Debug("ExampleConversationStreaming", "text : {0} | intent: {1} | confidence: {2}", resp.output.text[0], resp.intents[0].intent, resp.intents[0].confidence);
