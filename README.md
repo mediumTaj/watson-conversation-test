@@ -1,7 +1,7 @@
 # Watson Conversation Test
 This project tests using Speech to Text with Conversation. 
 
-1. Clone the project and initalize and update the submodule. 
+1. Clone the project. Initialize and update the submodule.
 
 1. Configure credentials for `SpeechToText` and `Conversation` services (**Watson > Configuration Editor**)	
 
